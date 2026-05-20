@@ -1,0 +1,11 @@
+node_modules/
+downloads/
+output/
+.env
+*.mp4
+*.mov
+*.avi
+*.webm
+*.mkv
+npm-debug.log*
+.DS_Store
