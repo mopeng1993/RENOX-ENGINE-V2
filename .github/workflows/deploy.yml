@@ -1,0 +1,72 @@
+name: RENOX ENGINE — CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    name: Syntax & dependency check
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Check JS syntax
+        run: |
+          node --check bot.js
+          node --check editor.js
+          node --check styles/index.js
+          node --check styles/sigma.js
+          node --check styles/cinematic.js
+          node --check styles/emotional.js
+          node --check styles/anime.js
+
+      - name: Verify ffmpeg-static binary
+        run: |
+          node -e "
+            const p = require('ffmpeg-static');
+            require('fs').accessSync(p);
+            console.log('✅ ffmpeg-static binary present:', p);
+          "
+
+      - name: Verify style loader
+        run: |
+          node -e "
+            const { loadStyle, STYLES } = require('./styles');
+            const names = Object.keys(STYLES);
+            console.log('✅ Styles registered:', names.join(', '));
+            names.forEach(n => {
+              const s = loadStyle(n);
+              if (!s.colorFilter) throw new Error('Missing colorFilter on: ' + n);
+              console.log(' ✓', s.name, '—', s.description);
+            });
+          "
+
+  # Render auto-deploys via GitHub integration on every push to main.
+  # No webhook needed — just connect the repo in the Render dashboard.
+  deploy-info:
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    name: Deploy summary
+
+    steps:
+      - name: Print deploy info
+        run: |
+          echo "🚀 Validated. Render will auto-deploy:"
+          echo "   Commit : ${{ github.sha }}"
+          echo "   Message: ${{ github.event.head_commit.message }}"
+          echo "   Branch : ${{ github.ref_name }}"
