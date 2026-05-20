@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: renox-engine
+    env: node
+    region: oregon      # cheapest Render Free region
+    plan: free
+    buildCommand: npm install
+    startCommand: node bot.js
+    healthCheckPath: /
+    autoDeploy: true    # redeploy on every push to main branch
+
+    envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false     # ← set this manually in Render dashboard, never commit it
+
+      - key: NODE_ENV
+        value: production
+
+    # No apt packages needed — ffmpeg-static bundles the binary inside node_modules
